@@ -1,0 +1,11 @@
+*
+!*.cpp
+!*.c
+!*.h
+!*.asm
+!*.md
+!CMakeLists.txt
+!.gitignore
+
+!sysdeps/
+!sysdeps/*
