@@ -1,3 +1,5 @@
+// Copyright 2022 Erik Rigtorp <erik@rigtorp.se>
+
 #pragma once
 
 #include <atomic>

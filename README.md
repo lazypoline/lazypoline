@@ -12,11 +12,13 @@ make -j
 ```
 
 ## Running
-lazypoline can hook syscalls in precompiled binaries by setting the appropriate environment variables when launching.
+lazypoline can hook syscalls in precompiled binaries by setting the appropriate environment variables when launching. Example:
 ```bash
 # from project source
-LIBLAZYPOLINE="$(realpath build)/liblazypoline.so" LD_PRELOAD="$(realpath build)/libbootstrap.so" ls
+LIBLAZYPOLINE="$(realpath build)/liblazypoline.so" LD_PRELOAD="$(realpath build)/libbootstrap.so" <some binary>
 ```
+
+Note that this way of launching will miss syscalls performed before and while the dynamic loader loads lazypoline.
 
 ## Extending
 You can modify lazypoline to better fit your needs. `syscall_emulate` in [lazypoline.cpp](/lazypoline.cpp) is your main entry point. 
