@@ -1,5 +1,7 @@
 # lazypoline
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10372035.svg)](https://doi.org/10.5281/zenodo.10372035)
+
 lazypoline is a fast, exhaustive, and expressive syscall interposer for user-space Linux applications. It uses a _hybrid interposition_ mechanism based on Syscall User Dispatch (SUD) and binary rewriting to exhaustively interpose all syscalls with maximal efficiency. You can find more details in our DSN'24 paper, "System Call Interposition Without Compromise".
 
 ## Building
@@ -30,3 +32,6 @@ We recommend including lazypoline into your application through the small [boots
 
 ## Compatibility
 lazypoline is well-tested on Ubuntu 20.04 and 22.04. Its primary compatibility requirement is kernel version >= 5.11 (needs SUD). In addition, the `SIGSETSIZE` in [util.h](/util.h) and everything under [sysdeps/](/sysdeps/) should be kept in sync with whatever glibc version you're running. 
+
+## Related DSN 2024 artifacts
+You can find the benchmarks for the performance evaluation in the DSN paper at [https://github.com/lazypoline/benchmarks](https://github.com/lazypoline/benchmarks). The Pintool to track application's register preservation expectations across syscalls is located at [https://github.com/lazypoline/pintool-syscall-abi-expectations](https://github.com/lazypoline/pintool-syscall-abi-expectations). 
