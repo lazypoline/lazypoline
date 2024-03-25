@@ -1,8 +1,5 @@
 #include "gsreldata.h"
 
-/* Earlier commits (e.g. lazypoline_adriaan's 1ee1122139463e94130ae8503278484bf8275f9d) 
-    contain a CET-compatible version of this trampoline */
-
 /* This is the landingpad for sigreturns from user-supplied signal handlers */
 /* We just have to restore the selector value, and then jump back to where 
     the sigreturn should have actually went to (the "old RIP")
