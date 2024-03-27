@@ -2,7 +2,7 @@
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10372035.svg)](https://doi.org/10.5281/zenodo.10372035)
 
-lazypoline is a fast, exhaustive, and expressive syscall interposer for user-space Linux applications. It uses a _hybrid interposition_ mechanism based on Syscall User Dispatch (SUD) and binary rewriting to exhaustively interpose all syscalls with maximal efficiency. You can find more details in our DSN'24 paper, "System Call Interposition Without Compromise".
+**lazypoline** is a fast, exhaustive, and expressive syscall interposer for user-space Linux applications. It uses a _hybrid interposition_ mechanism based on Syscall User Dispatch (SUD) and binary rewriting to exhaustively interpose all syscalls with maximal efficiency. You can find more details in our DSN'24 paper, "System Call Interposition Without Compromise".
 
 ## Building
 We use CMake for building. Typical usage as follows:
@@ -21,6 +21,10 @@ LIBLAZYPOLINE="$(realpath build)/liblazypoline.so" LD_PRELOAD="$(realpath build)
 ```
 
 Note that this way of launching will miss syscalls performed before and while the dynamic loader loads lazypoline.
+Just like zpoline, lazypoline requires permissions to `mmap` at low virtual addresses, i.e., the 0 page. You can permit this via:
+```bash
+echo 0 | sudo tee /proc/sys/vm/mmap_min_addr
+```
 
 ## Extending
 You can modify lazypoline to better fit your needs. `syscall_emulate` in [lazypoline.cpp](/lazypoline.cpp) is your main entry point. 
