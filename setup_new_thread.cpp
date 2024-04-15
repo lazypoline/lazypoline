@@ -7,6 +7,8 @@
 #include <linux/unistd.h>
 #include <linux/mman.h>
 
+#include <asm/prctl.h>
+
 #include <immintrin.h>
 
 #define PR_SET_SYSCALL_USER_DISPATCH	59
@@ -44,8 +46,24 @@ GSRelativeData* map_gsrel_region() {
     auto mem = (void*) inline_syscall6(__NR_mmap, 0x0, sizeof(GSRelativeData), PROT_READ|PROT_WRITE, MAP_ANONYMOUS|MAP_PRIVATE, -1, 0);
     assert(mem != (void*) -1 && mem != 0);
     auto gsreldata = new ((void*)mem) GSRelativeData();
+#ifdef __FSGSBASE__
     _writegsbase_u64((long long) mem);
+#else
+    auto result = inline_syscall6(__NR_arch_prctl, ARCH_SET_GS, mem, 0, 0, 0, 0);
+    assert(result == 0);
+#endif
     return gsreldata;
+}
+
+inline uint64_t rdgsbase() {
+#ifdef __FSGSBASE__
+    return _readgsbase_u64();
+#else
+    uint64_t gsbase = 0;
+    auto result = inline_syscall6(__NR_arch_prctl, ARCH_GET_GS, &gsbase, 0, 0, 0, 0);
+    assert(result == 0);
+    return gsbase;
+#endif
 }
 
 void teardown_thread_metadata() {
@@ -54,12 +72,12 @@ void teardown_thread_metadata() {
     // ensure the kernel won't try to access the unmapped selector
     long result = inline_syscall6(__NR_prctl, PR_SET_SYSCALL_USER_DISPATCH, PR_SYS_DISPATCH_OFF, 0x0, 0, 0, 0);
     assert(result == 0);
-    result = inline_syscall6(__NR_munmap, (void*)_readgsbase_u64(), __builtin_align_up(sizeof(GSRelativeData), 0x1000), 0, 0, 0, 0);
+    result = inline_syscall6(__NR_munmap, (void*)rdgsbase(), __builtin_align_up(sizeof(GSRelativeData), 0x1000), 0, 0, 0, 0);
     assert(result == 0);
 }
 
 void enable_sud() {
-    volatile char* selector_addr = ((char*) _readgsbase_u64()) + SUD_SELECTOR_OFFSET;
+    volatile char* selector_addr = ((char*) rdgsbase()) + SUD_SELECTOR_OFFSET;
     long result = inline_syscall6(__NR_prctl, PR_SET_SYSCALL_USER_DISPATCH, PR_SYS_DISPATCH_ON, 0x0, 0, selector_addr, 0);
 	assert(result == 0);
 }
@@ -71,7 +89,7 @@ SignalHandlers* map_signal_handlers() {
 }
 
 extern "C" void setup_new_thread(unsigned long long clone_flags) {
-    auto cloner_gsrel = (GSRelativeData*) _readgsbase_u64();
+    auto cloner_gsrel = (GSRelativeData*) rdgsbase();
     GSRelativeData* gsreldata = map_gsrel_region();
     set_privilege_level(SYSCALL_DISPATCH_FILTER_ALLOW);
 
