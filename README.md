@@ -4,6 +4,15 @@
 
 **lazypoline** is a fast, exhaustive, and expressive syscall interposer for user-space Linux applications. It uses a _hybrid interposition_ mechanism based on Syscall User Dispatch (SUD) and binary rewriting to exhaustively interpose all syscalls with maximal efficiency. You can find more details in our DSN'24 paper, ["System Call Interposition Without Compromise"](https://adriaanjacobs.github.io/files/dsn24lazypoline.pdf).
 
+```bibtex
+@inproceedings{jacobs2024lazypoline,
+  title={System Call Interposition Without Compromise},
+  author={Jacobs, Adriaan and G{\"u}lmez, Merve and Andries, Alicia and Volckaert, Stijn and Voulimeneas, Alexios},
+  booktitle={Proceedings of the International Conference on Dependable Systems and Networks},
+  year={2024}
+}
+```
+
 ## Building
 We use CMake for building. Typical usage as follows:
 ```bash
