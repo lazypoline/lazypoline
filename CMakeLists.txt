@@ -31,7 +31,7 @@ set_property(
 # FIXME: -nostdlib doesn't seem to do much though, and as a link option
 # it gives undefined symbols
 add_library(setup_thread STATIC setup_new_thread.cpp)
-target_compile_options(setup_thread PUBLIC ${COMMON_COMPILE_OPTIONS} -nostdlib -ffreestanding -fno-exceptions -O3)
+target_compile_options(setup_thread PRIVATE ${COMMON_COMPILE_OPTIONS} -nostdlib -ffreestanding -fno-exceptions -O3)
 target_include_directories(setup_thread PUBLIC .)
 
 add_library(lazypoline SHARED 
