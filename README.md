@@ -8,8 +8,10 @@
 @inproceedings{jacobs2024lazypoline,
   title={System Call Interposition Without Compromise},
   author={Jacobs, Adriaan and G{\"u}lmez, Merve and Andries, Alicia and Volckaert, Stijn and Voulimeneas, Alexios},
-  booktitle={Proceedings of the International Conference on Dependable Systems and Networks},
-  year={2024}
+  booktitle={54th Annual IEEE/IFIP International Conference on Dependable Systems and Networks (DSN)}, 
+  year={2024},
+  pages={183-194},
+  doi={10.1109/DSN58291.2024.00030}
 }
 ```
 
