@@ -146,6 +146,10 @@ asm_syscall_hook:
     cmpq $__NR_clone, %rax
     je .do_clone_thread_or_clone_vfork
 
+    /* check whether we have to vfork */
+    cmpq $__NR_vfork, %rax
+    je .do_vfork
+
     /* if neither of the above, something's wrong */
     ud2
     int3
@@ -198,4 +202,58 @@ asm_syscall_hook:
     exit_interposer
     /* cleanup and return to syscall site */
     popq %rax
+    ret
+
+.do_vfork:
+    /* vfork (not CLONE_VFORK) is a _really_ annoying syscall */
+    /* we could handle CLONE_VFORK easily because we enforce that 
+        the child runs on a different stack. We essentially treat that like
+        CLONE_THREAD */
+    /* we can't do this for the vfork syscall, because you cannot specify a different child stack */
+    /* the problem is that the child will run first, and pop the 
+        `rip_after_syscall` from the shared stack. It can then run other code
+        which pushes to the stack (like CPython does), and destroy the `rip_after_syscall` */
+    /* once the child execve's and the parent wants to return, it will observe a total
+        garbage value on the top of the stack, and use that to return. This will crash him */
+
+    /* to fix this, we push the rip_after_syscall to a dedicated stack in the parent's gsrel region */
+    /* we don't have to do this for the child, since it will use the stack instead */
+
+    pushq %rsi
+    movq %gs:RIP_AFTER_SYSCALL_STACK_SP_OFFSET, %rsi
+    movq 8(%rsp), %rcx /* rcx is clobbered by syscall anyway */
+    movq %rcx, (%rsi)
+    addq $8, %rsi
+    movq %rsi, %gs:RIP_AFTER_SYSCALL_STACK_SP_OFFSET
+    popq %rsi
+    
+    /* do the syscall */
+    syscall
+    testq %rax, %rax
+    jz .vforked_child_enable_sud
+    /* parent here: either done or error */
+    /* the vfork-ed child might have overwritten the rip_after_syscall here */
+    /* but the RSP will still point to the right location */
+    /* restore the saved rip_after_syscall to the stack & return */
+    pushq %rsi
+    movq %gs:RIP_AFTER_SYSCALL_STACK_SP_OFFSET, %rsi
+    subq $8, %rsi 
+    movq (%rsi), %rcx /* rcx has to hold `rip_after_syscall` anyway */
+    movq %rsi, %gs:RIP_AFTER_SYSCALL_STACK_SP_OFFSET
+    popq %rsi
+    movq %rcx, (%rsp)
+
+    exit_interposer
+    ret
+
+.vforked_child_enable_sud:
+    /* we will set up a gsrel region here that shares sigdisps with the parent */
+    /* we need to re-enable SUD here anyway */
+    pushq %rax
+    setup_c_stack
+    callq setup_vforked_child
+    teardown_c_stack
+    popq %rax
+    /* lower privileges and return */
+    exit_interposer
     ret

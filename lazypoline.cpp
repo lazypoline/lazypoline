@@ -68,6 +68,11 @@ void precall_fork(int64_t&, int64_t&, int64_t&, int64_t&, int64_t&, int64_t&) {
 
 }
 
+[[maybe_unused]]
+void precall_vfork(int64_t&, int64_t&, int64_t&, int64_t&, int64_t&, int64_t&) {
+
+}
+
 // called in both parent and child (if fork was successful)
 [[maybe_unused]]
 void postcall_fork(int64_t&, int64_t, int64_t, int64_t, int64_t, int64_t, int64_t) {
@@ -110,7 +115,8 @@ long syscall_emulate(const int64_t syscall_no, int64_t a1, int64_t a2, int64_t a
     fprintf(stderr, "\e[31m[%d] syscall(%s [%ld], 0x%lx, 0x%lx, 0x%lx, 0x%lx, 0x%lx, 0x%lx)\e[m\n", getpid(), get_syscall_name(syscall_no), syscall_no, a1, a2, a3, a4, a5, a6);
 #endif
 
-    assert(syscall_no != __NR_vfork);
+    // we would have to specially handle this when they unshare signal dispositions or vm
+    assert(syscall_no != __NR_unshare);
 
     if (syscall_no == __NR_clone3) { // fallback to clone
         precall_clone3();
@@ -123,6 +129,14 @@ long syscall_emulate(const int64_t syscall_no, int64_t a1, int64_t a2, int64_t a
         do_postfork_handling(result);
         postcall_fork(result, a1, a2, a3, a4, a5, a6);
         return result;
+    }
+
+    if (syscall_no == __NR_vfork) {
+        // equivalent to clone (CLONE_VM | CLONE_VFORK | SIGCHLD) (cfr. https://man7.org/linux/man-pages/man2/vfork.2.html)
+        precall_vfork(a1, a2, a3, a4, a5, a6);
+        // the vfork syscall does not take any args
+        *should_emulate = true;
+        return __NR_vfork;
     }
 
     if (syscall_no == __NR_clone) {
@@ -148,6 +162,8 @@ long syscall_emulate(const int64_t syscall_no, int64_t a1, int64_t a2, int64_t a
             // vfork-like handling
             // parent won't do anything until child calls exec/quits
             // should be handled just like CLONE_THREAD: it's as if the parent just happens to not get scheduled
+            // FIXME:: this stack should be disjoint from the parent stack. For posix_spawn in glibc 2.31, this is the case
+            //          ideally, we check this here
             assert(stack); // we push to the child stack from the parent, later
             assert(flags & CLONE_VM);
             assert(!(flags & CLONE_THREAD));

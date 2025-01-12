@@ -105,3 +105,7 @@ extern "C" void setup_new_thread(unsigned long long clone_flags) {
     // re-enable SUD
     enable_sud();
 }
+
+extern "C" void setup_vforked_child() {
+    setup_new_thread(CLONE_VM|CLONE_VFORK|SIGCHLD);
+}
