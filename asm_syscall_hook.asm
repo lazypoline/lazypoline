@@ -1,7 +1,7 @@
 #include "gsreldata.h"
 #include <linux/unistd.h>
 
-.macro setup_c_stack
+.macro xsave_vector_regs_to_gsrel
 #if SAVE_VECTOR_REGS
     pushq %rdx
     pushq %rax
@@ -16,16 +16,32 @@
     popq %rax
     popq %rdx
 #endif
+.endmacro
 
+.macro xrstor_vector_regs_from_gsrel
+#if SAVE_VECTOR_REGS
+    pushq %rdx
+    pushq %rax
+    pushq %rsi
+    xorl %edx, %edx
+    movl $XSAVE_EAX, %eax
+    movq %gs:XSAVE_AREA_STACK_SP_OFFSET, %rsi
+    subq $XSAVE_SIZE, %rsi
+    xrstor (%rsi)
+    movq %rsi, %gs:XSAVE_AREA_STACK_SP_OFFSET
+    popq %rsi
+    popq %rax
+    popq %rdx
+#endif
+.endmacro
+
+.macro setup_c_stack
     pushq %rbp
     movq %rsp, %rbp
 
     /*
     * NOTE: for xmm register operations such as movaps
     * stack is expected to be aligned to a 16 byte boundary.
-    * that's all fine and dandy, but we're not saving the xmm
-    * regs here so the app can't really use them anyway, because
-    * they'll get clobbered
     */
 
     andq $-16, %rsp /* 16 byte stack alignment */
@@ -53,21 +69,6 @@
 
     movq %rbp, %rsp
     popq %rbp
-
-#if SAVE_VECTOR_REGS
-    pushq %rdx
-    pushq %rax
-    pushq %rsi
-    xorl %edx, %edx
-    movl $XSAVE_EAX, %eax
-    movq %gs:XSAVE_AREA_STACK_SP_OFFSET, %rsi
-    subq $XSAVE_SIZE, %rsi
-    xrstor (%rsi)
-    movq %rsi, %gs:XSAVE_AREA_STACK_SP_OFFSET
-    popq %rsi
-    popq %rax
-    popq %rdx
-#endif
 .endmacro
 
 .macro exit_interposer
@@ -91,6 +92,7 @@ asm_syscall_hook:
 
     pushq %r12  /* we use it to check whether we should emulate the syscall or not */
 
+    xsave_vector_regs_to_gsrel
     setup_c_stack
 
     /* arguments for zpoline_syscall_handler */
@@ -119,6 +121,7 @@ asm_syscall_hook:
     popq %r12 /* should_emulate -> r12 */
     
     teardown_c_stack
+    xrstor_vector_regs_from_gsrel
 
     /* at this point, "all" of our handling mingling has been undone
         (minus some post-rsp stack changes)
@@ -130,7 +133,7 @@ asm_syscall_hook:
     popq %r12 /* restore r12 (callee-saved) */
     jz .do_nothing
 
-    /* SUD is still unblocked here here */
+    /* SUD is still unblocked here */
 
     /* when emulating, rax will contain the syscall to emulate */
     /* now check whether we have to sigreturn */
