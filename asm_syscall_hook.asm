@@ -257,3 +257,5 @@ asm_syscall_hook:
     /* lower privileges and return */
     exit_interposer
     ret
+
+.section .note.GNU-stack
