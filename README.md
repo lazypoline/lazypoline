@@ -43,13 +43,17 @@ You can modify lazypoline to better fit your needs. `syscall_emulate` in [lazypo
 We recommend including lazypoline into your application through the small [bootstrap](/bootstrap_runtime.cpp), which uses `dlmopen` to load the main lazypoline library in a new dynamic library namespace. This ensures that the interposer links to a separate copy of all libraries it uses, instead of re-using those from the application it is interposing. Application libraries may have re-written syscalls, which would lead to recursive interposer invocations. In addition, many library functions that perform syscalls are not re-entrancy safe, which can lead to hard-to-diagnose bugs when they are invoked from the interposer. 
 
 ## Debugging and testing
-We include a `main` binary that contains a number of testcases for lazypoline, e.g., multi-threading/multi-processing, signal delivery during trusted/untrusted execution. You can run this binary in the normal way, i.e., by setting the `LIBLAZYPOLINE` and `LD_PRELOAD` environment variables. To run under the debugger, we typically set these variables through the `env` binary, e.g.: 
+We include a `main` binary that contains a number of testcases for lazypoline, e.g., multi-threading/multi-processing, signal delivery during application/interposer execution, etc. You can run this binary in the normal way, i.e., by setting the `LIBLAZYPOLINE` and `LD_PRELOAD` environment variables. To run under the debugger, we typically set these variables through the `env` binary, e.g.: 
 
 ```bash
 # from the 'build' folder
 gdb --args env LIBLAZYPOLINE=./liblazypoline.so LD_PRELOAD=./libbootstrap.so ./main 
 ```
+When debugging with gdb, gdb will pause execution whenever SUD intercepts a system call. You can manually continue each time by entering the `c`(continue) command, or permanently disable gdb from stopping on this signal by executing:
 
+```bash
+handle SIGSYS nostop noprint
+```
 ## Configuration
 [config.h](/config.h) contains some options to control lazypoline's behavior. Most are self-explanatory. Enable `COMPAT_NONDEP_APP` to restore page permissions to `RWX` instead of `RX` (default). Some old JIT engines, like [`tcc`](https://bellard.org/tcc/) require this.
 

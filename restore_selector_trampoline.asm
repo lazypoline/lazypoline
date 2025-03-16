@@ -28,3 +28,5 @@ restore_selector_trampoline:
     popq %rdx
     popq %rax
     ret /* old RIP sits at top of stack */
+
+.section .note.GNU-stack
