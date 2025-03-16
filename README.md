@@ -49,7 +49,11 @@ We include a `main` binary that contains a number of testcases for lazypoline, e
 # from the 'build' folder
 gdb --args env LIBLAZYPOLINE=./liblazypoline.so LD_PRELOAD=./libbootstrap.so ./main 
 ```
+When debugging with gdb, whenever SUD intercepts a system call, gdb will pause execution. You can manually continue each time by entering the `c`(continue) command, or permanently disable gdb from stopping on this signal by executing:
 
+```bash
+handle SIGSYS nostop
+```
 ## Configuration
 [config.h](/config.h) contains some options to control lazypoline's behavior. Most are self-explanatory. Enable `COMPAT_NONDEP_APP` to restore page permissions to `RWX` instead of `RX` (default). Some old JIT engines, like [`tcc`](https://bellard.org/tcc/) require this.
 
