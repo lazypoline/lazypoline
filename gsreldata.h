@@ -45,5 +45,6 @@ SignalHandlers* map_signal_handlers();
 void enable_sud();
 extern "C" void setup_new_thread(unsigned long long clone_flags);
 void teardown_thread_metadata();
+extern "C" void setup_restore_selector_trampoline(void* ucontextv);
 
 #endif

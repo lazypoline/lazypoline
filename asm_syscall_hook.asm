@@ -161,10 +161,26 @@ asm_syscall_hook:
 .do_rt_sigreturn:
     /* all the syscall arguments in rdi etc should still be in the original state */
     /* but I don't think they even matter for sigreturn */
-
     addq $8, %rsp /* discard the pushed return address, ~ the ret in the normal path */
-    /* `wrap_signal_handler` will have set REG_RIP to `restore_selector_trampoline` */
+    /* setup_restore_selector_trampoline will set REG_RIP to `restore_selector_trampoline` */
     /* and the original RIP to return to is pushed to the stack of the original program */
+    pushq %rdx
+    /*retrieve selector on entry from the sigreturn stack*/
+    movq %gs:SIGRETURN_STACK_SP_OFFSET, %rdx
+    subq $8, %rdx
+    movq %rdx, %gs:SIGRETURN_STACK_SP_OFFSET
+    movq (%rdx), %rdx
+    cmpq $0, %rdx
+    popq %rdx
+    je .sigreturn_syscall /*only restore the sud selector if selector at entry is not already set to allow*/
+
+    movq (%rsp), %rdi /*rdi now contains a pointer to the the signal frame*/
+    pushq %rax
+    setup_c_stack
+    callq setup_new_thread
+    teardown_c_stack
+    popq %rax
+.sigreturn_syscall:
     syscall 
     ud2
     int3

@@ -37,11 +37,6 @@ void wrap_signal_handler(int signo, siginfo_t* info, void* ucontextv) {
 
     // the signal handler is going to return here, and we will intercept the sigreturn (selector = off)
     // after we intercept the sigreturn, we will have to emulate it without interception, then re-enable the interception
-    // it's easiest if we modify the gregs[RIP] here already, keeping track of its original value
-    gregs[REG_RSP] -= sizeof(uint64_t);
-    auto stack_bottom = ((int64_t*)gregs[REG_RSP]);
-    stack_bottom[0] = gregs[REG_RIP];
-    gregs[REG_RIP] = (uint64_t) restore_selector_trampoline;
 
     // handle nested signal delivery through a stack of selector_on_entry's
     gsreldata->sigreturn_stack.current++;
