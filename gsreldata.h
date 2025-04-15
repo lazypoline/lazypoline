@@ -4,8 +4,8 @@
 
 #define SUD_SELECTOR_OFFSET                 0
 #define SIGRETURN_STACK_SP_OFFSET           16
-#define RIP_AFTER_SYSCALL_STACK_SP_OFFSET   4120
-#define XSAVE_AREA_STACK_SP_OFFSET          8256
+#define RIP_AFTER_SYSCALL_STACK_SP_OFFSET   32792
+#define XSAVE_AREA_STACK_SP_OFFSET          36928
 /* https://www.moritz.systems/blog/how-debuggers-work-getting-and-setting-x86-registers-part-2/ */
 #define XSAVE_EAX                           0b111   /* saves the x87 state, and XMM & YMM vector registers */
 #define XSAVE_SIZE                          768     /* aligned to 64-byte boundary, so fine */
@@ -18,8 +18,8 @@ struct alignas(0x1000) GSRelativeData {
     volatile char sud_selector = 0xFF;
     SignalHandlers* signal_handlers = nullptr;
     struct {
-        volatile char* current = base;
-        volatile char base[0x1000];
+        volatile long long* current = base;
+        volatile long long base[0x1000];
     } sigreturn_stack;
     struct { // stack of `rip_after_syscall`s for use during vfork handling
         volatile char* current = base;
@@ -45,5 +45,6 @@ SignalHandlers* map_signal_handlers();
 void enable_sud();
 extern "C" void setup_new_thread(unsigned long long clone_flags);
 void teardown_thread_metadata();
+extern "C" void setup_restore_selector_trampoline(void* ucontextv);
 
 #endif

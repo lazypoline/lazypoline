@@ -161,10 +161,31 @@ asm_syscall_hook:
 .do_rt_sigreturn:
     /* all the syscall arguments in rdi etc should still be in the original state */
     /* but I don't think they even matter for sigreturn */
-
     addq $8, %rsp /* discard the pushed return address, ~ the ret in the normal path */
-    /* `wrap_signal_handler` will have set REG_RIP to `restore_selector_trampoline` */
+    /* setup_restore_selector_trampoline will set REG_RIP to `restore_selector_trampoline` */
     /* and the original RIP to return to is pushed to the stack of the original program */
+    pushq %rdx
+    /*retrieve selector on entry from the sigreturn stack*/
+    movq %gs:SIGRETURN_STACK_SP_OFFSET, %rdx
+    subq $8, %rdx
+    movq %rdx, %gs:SIGRETURN_STACK_SP_OFFSET
+    movq (%rdx), %rdx
+    cmpq $0, %rdx
+    popq %rdx
+    je .sigreturn_syscall /*only restore the sud selector if selector at entry is not already set to allow*/
+
+    pushq %rdi
+    movq %rsp, %rdi
+    addq $8, %rdi /*rdi now points to ucontextv*/
+    pushq %rax
+    setup_c_stack
+    callq setup_restore_selector_trampoline
+    teardown_c_stack
+    popq %rax
+    popq %rdi
+
+
+.sigreturn_syscall:
     syscall 
     ud2
     int3

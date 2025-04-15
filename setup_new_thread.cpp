@@ -20,6 +20,9 @@
 /* Watch out with the code you call here: 
     it shouldn't do any TLS stuff, and shouldn't call glibc either
 */
+// implemented in restore_selector_trampoline.asm
+extern "C" void restore_selector_trampoline();
+
 
 #ifndef assert
 #define assert(cond)        \
@@ -109,3 +112,13 @@ extern "C" void setup_new_thread(unsigned long long clone_flags) {
 extern "C" void setup_vforked_child() {
     setup_new_thread(CLONE_VM|CLONE_VFORK|SIGCHLD);
 }
+
+extern "C" void setup_restore_selector_trampoline(void* ucontextv){
+    const auto uctxt = (ucontext_t*) ucontextv;
+	const auto gregs = uctxt->uc_mcontext.gregs;
+
+    gsreldata->sigreturn_stack.current[0] = gregs[REG_RIP];
+    gsreldata->sigreturn_stack.current++;
+    gregs[REG_RIP] = (uint64_t) restore_selector_trampoline;
+}
+
