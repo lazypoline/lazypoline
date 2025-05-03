@@ -1,0 +1,21 @@
+cff-version: 1.2.0
+message: "If you use this work, please cite it as below."
+preferred-citation:
+  type: conference-paper
+  authors:
+  - family-names: "Jacobs"
+    given-names: "Adriaan"
+  - family-names: "G{\"u}lmez"
+    given-names: "Merve"
+  - family-names: "Andries"
+    given-names: "Alicia"
+  - family-names: "Volckaert"
+    given-names: "Stijn"
+  - family-names: "Voulimeneas"
+    given-names: "Alexios"
+  title: System Call Interposition Without Compromise
+  doi: 10.1109/DSN58291.2024.00030
+  collection-title: 54th Annual IEEE/IFIP International Conference on Dependable Systems and Networks (DSN)
+  collection-type: proceedings
+  pages: "183-194"
+  year: "2024"
